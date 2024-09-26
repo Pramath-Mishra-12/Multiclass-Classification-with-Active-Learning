@@ -1,6 +1,4 @@
-# Active Learning with AG News Dataset
-
-## Introduction
+# Active Learning with Amazon Product Data
 
 With the growth of data-centric Machine Learning, Active Learning has become increasingly popular among businesses and researchers. Active Learning seeks to progressively train machine learning (ML) models, reducing the amount of training data required to achieve competitive performance.
 
@@ -18,7 +16,7 @@ The process starts with:
 
 ## Active Learning Sampling Techniques
 
-This repository implements four different active learning sampling techniques, each demonstrated using the AG News dataset:
+This repository implements four different active learning sampling techniques, each demonstrated using the Amazon Product Data dataset:
 
 1. **Least Confidence Sampling**: This strategy selects samples where the model has the least confidence in its predictions (i.e., the maximum predicted class probability is the lowest). Least confident samples are labeled and added to the training set.
 
@@ -41,7 +39,7 @@ $$F1 = 2 * \frac {Precision * Recall} {Precision + Recall}$$
 
 ### Why Use the F1-Score?
 
-1. **Imbalanced Classes**: In multi-class classification tasks like AG News, the distribution of classes may not be uniform. The F1-Score helps ensure that the model performs well on all classes, especially the minority ones.
+1. **Imbalanced Classes**: In multi-class classification tasks like Amazon Product Data, the distribution of classes may not be uniform. The F1-Score helps ensure that the model performs well on all classes, especially the minority ones.
 
 2. **Balance Between Precision and Recall**: It provides a balance between precision and recall, giving a better sense of the model’s performance than accuracy alone, which can be misleading when classes are imbalanced.
 
@@ -49,27 +47,20 @@ $$F1 = 2 * \frac {Precision * Recall} {Precision + Recall}$$
 
 ## Repository Structure
 
-- `custom_dataset.py`: Implements the Custom Dataset Class.
-- `least_confidence_sampling.py`: Implements the Least Confidence Sampling technique.
-- `entropy_reduction_sampling.py`: Implements Entropy Reduction Sampling.
-- `minimum_margin_sampling.py`: Implements Minimum Margin Sampling.
-- `main.py`: The main script that runs active learning loops for each sampling strategy using the AG News dataset.
+- `./utils/custom_dataset.py`: Implements the Custom Dataset Class.
+- `./sampling/least_confidence_sampling.py`: Implements the Least Confidence Sampling technique.
+- `./sampling/entropy_reduction_sampling.py`: Implements Entropy Reduction Sampling.
+- `./sampling/minimum_margin_sampling.py`: Implements Minimum Margin Sampling.
+- `main.py`: The main script that runs active learning loops for each sampling strategy using the Amazon Product Data dataset.
 
 ## Dataset
 
-The **AG News** dataset is a text classification dataset containing news articles labeled into four classes:
-- **World**
-- **Sports**
-- **Business**
-- **Sci/Tech**
-
-The dataset is loaded using the `datasets` library.
+The **Amazon Product Data** dataset, from Hugging Face's `iarbel/amazon-product-data-filter`, is a multi-class text classification dataset. It contains product reviews and metadata from Amazon, categorized into **14 classes**. The dataset is loaded using the `datasets` library.
 
 ## Model
 
-This repository uses a **BERT**-based model for text classification, leveraging the Hugging Face `transformers` library. BERT is pre-trained on large corpora and fine-tuned on the AG News dataset for the classification task.
+This repository uses a **BERT**-based model for text classification, leveraging the Hugging Face `transformers` library. BERT is pre-trained on large corpora and fine-tuned on the Amazon Product Data dataset for the classification task.
 
 ## Conclusion
 
-This repository demonstrates various Active Learning sampling strategies on a multi-class classification task using the AG News dataset. 
-Each sampling strategy has its strengths, allowing you to experiment and compare which technique best suits your needs.
+This repository demonstrates various **Active Learning** sampling strategies on a multi-class classification task using the Amazon Product Data dataset. Each sampling strategy has its strengths, allowing you to experiment and compare which technique best suits your needs.

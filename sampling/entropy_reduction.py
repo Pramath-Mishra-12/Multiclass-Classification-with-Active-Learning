@@ -20,7 +20,7 @@ def entropy_sampling(model_, unlabeled_loader, n_samples=10):
             entropy = -torch.sum(probs * torch.log(probs + 1e-12), dim=1)
             entropies.append(entropy.cpu().numpy())
 
-    entropies = np.array(entropies)
-    # Select top n_samples with highest entropy
+    entropies = np.concatenate(entropies)
+    # Select top n_samples with the highest entropy
     uncertain_indices = entropies.argsort()[-n_samples:]
     return uncertain_indices

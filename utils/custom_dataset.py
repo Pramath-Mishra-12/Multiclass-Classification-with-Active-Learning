@@ -14,7 +14,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         text = self.texts[idx]
-        encodings = self.tokenizer.encode_plus(
+        encodings = self.tokenizer(
             text,
             max_length=self.max_length,
             padding='max_length',

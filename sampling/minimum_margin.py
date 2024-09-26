@@ -19,7 +19,7 @@ def minimum_margin_sampling(model_, unlabeled_loader, n_samples=10):
             margin = top_two_probs[:, 0] - top_two_probs[:, 1]
             margins.append(margin.cpu().numpy())
 
-    margins = np.array(margins)
+    margins = np.concatenate(margins)
     # Select n_samples with the smallest margin (highest uncertainty)
     uncertain_indices = margins.argsort()[:n_samples]
     return uncertain_indices

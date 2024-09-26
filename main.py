@@ -1,12 +1,14 @@
 import torch
+import pandas as pd
+from sklearn import preprocessing
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
-from custom_dataset import CustomDataset
+from utils.custom_dataset import CustomDataset
 from sklearn.model_selection import train_test_split
-from entropy_reduction_sampling import entropy_sampling
 from datasets import load_dataset, concatenate_datasets
-from minimum_margin_sampling import minimum_margin_sampling
-from least_confidence_sampling import least_confidence_sampling
+from sampling.entropy_reduction import entropy_sampling
+from sampling.minimum_margin import minimum_margin_sampling
+from sampling.least_confidence import least_confidence_sampling
 from transformers import BertTokenizer, BertForSequenceClassification
 
 
@@ -15,6 +17,7 @@ def train_model(model_, train_loader):
     model_.train()
     optimizer = torch.optim.AdamW(model_.parameters(), lr=2e-5)
 
+    total_loss = 0
     for batch in train_loader:
         optimizer.zero_grad()
         inputs = {key: val.to('cuda' if torch.cuda.is_available() else 'cpu') for key, val in batch.items() if key != 'labels'}
@@ -23,6 +26,8 @@ def train_model(model_, train_loader):
         loss = outputs.loss
         loss.backward()
         optimizer.step()
+        total_loss += loss.item()
+    print(f"Loss: {total_loss / len(train_loader):.4f}")
 
 
 # Evaluation function (F1-Score)
@@ -73,7 +78,7 @@ def active_learning_loop(
         uncertain_indices = sampling_function(model_, unlabeled_loader_, n_samples=n_samples)
 
         # Simulate the oracle labeling
-        new_texts = [unlabeled_dataset_[i]['input_ids'] for i in uncertain_indices]
+        new_texts = [tokenizer.decode(unlabeled_dataset_[i]['input_ids']) for i in uncertain_indices]
         new_labels = [oracle_labels_[i] for i in uncertain_indices]  # Simulated oracle labels
 
         # Add newly labeled data to the labeled dataset
@@ -94,34 +99,44 @@ if __name__ == '__main__':
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     model = BertForSequenceClassification.from_pretrained(
         pretrained_model_name_or_path='bert-base-uncased',
-        num_labels=4
+        num_labels=14
     )
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
 
-    # Load AG News dataset
-    dataset = load_dataset("ag_news")
-    dataset = concatenate_datasets(dataset['train'], dataset['test'])
+    # Load Amazon product dataset
+    dataset = load_dataset("iarbel/amazon-product-data-filter")
+    print("Amazon product data loaded...")
 
-    # Train-test split with stratification
-    train_data, test_data = train_test_split(
-        dataset,
-        test_size=0.2,
-        stratify=dataset['label'],
+    # Train dataset
+    train_data = pd.DataFrame(concatenate_datasets([dataset['train'], dataset['validation']]))
+    train_data = train_data[['title', 'category']]
+
+    # Test dataset
+    test_data = pd.DataFrame(dataset['test'])
+    test_data = test_data[['title', 'category']]
+
+    # Label Encoding
+    le = preprocessing.LabelEncoder()
+    le.fit(train_data['category'])
+    train_data['category'] = le.transform(train_data['category'])
+    test_data['category'] = le.transform(test_data['category'])
+    print("Label encoding done...")
+
+    # Simulate oracle by further splitting train_data into labeled and unlabeled sets
+    labeled_data, unlabeled_data = train_test_split(
+        train_data,
+        test_size=0.8,
+        stratify=train_data['category'],
         random_state=42
     )
 
-    # Simulate oracle by further splitting train_data into labeled and unlabeled sets
-    train_size = int(0.05 * len(train_data))
-    labeled_data = train_data.select(range(train_size))
-    unlabeled_data = train_data.select(range(train_size, len(train_data)))
-
     # Prepare data for labeled, unlabeled, and test sets
-    labeled_texts = labeled_data['text']
-    labeled_labels = labeled_data['label']
-    unlabeled_texts = unlabeled_data['text']
-    test_texts = test_data['text']
-    test_labels = test_data['label']
+    labeled_texts = labeled_data['title'].tolist()
+    labeled_labels = labeled_data['category'].tolist()
+    unlabeled_texts = unlabeled_data['title'].tolist()
+    test_texts = test_data['title'].tolist()
+    test_labels = test_data['category'].tolist()
 
     # Create datasets
     labeled_dataset = CustomDataset(labeled_texts, labeled_labels, tokenizer)
@@ -129,7 +144,7 @@ if __name__ == '__main__':
     test_dataset = CustomDataset(test_texts, test_labels, tokenizer)
 
     # Simulated oracle labels for unlabeled dataset
-    oracle_labels = unlabeled_data['label']
+    oracle_labels = unlabeled_data['category'].tolist()
 
     # Run the active learning loop
     active_learning_loop(
@@ -138,8 +153,8 @@ if __name__ == '__main__':
         unlabeled_dataset,
         test_dataset,
         oracle_labels,
-        n_cycles=5,
+        n_cycles=25,
         n_samples=10,
-        batch_size=16,
-        sampling_function=least_confidence_sampling
+        batch_size=32,
+        sampling_function=minimum_margin_sampling
     )
