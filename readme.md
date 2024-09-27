@@ -1,4 +1,4 @@
-# Active Learning with Amazon Product Data
+# Multiclass Classification with Active Learning
 
 With the growth of data-centric Machine Learning, Active Learning has become increasingly popular among businesses and researchers. Active Learning seeks to progressively train machine learning (ML) models, reducing the amount of training data required to achieve competitive performance.
 
